@@ -85,7 +85,7 @@
       <div class="table-responsive mt-3">
         <table class="table table-sm table-bordered bg-white shadow-sm" style="font-size: 12px;">
           <thead class="bg-primary text-white text-center">
-            <tr><th>ID</th><th>Sekolah</th><th>Nama</th><th>Tgl Lahir</th><th>Kelas</th><th>Rombel</th><th>No Induk</th><th>Username</th><th>Password</th></tr>
+            <tr><th>ID</th><th>Sekolah</th><th>Nama</th><th>Tgl Lahir</th><th>Kelas</th><th>Rombel</th><th>No Induk</th><th>Username</th></tr>
           </thead>
           <tbody id="listSiswa"></tbody>
         </table>
@@ -226,7 +226,7 @@ function loadSiswa() {
 function renderTabelSiswa(data) {
   let html = "";
   data.forEach(s => {
-    html += `<tr><td>${s.studentId}</td><td>${s.sekolah}</td><td>${s.nama}</td><td>${s.tglLahir}</td><td>${s.kelas}</td><td>${s.rombel}</td><td>${s.noInduk}</td><td><b>${s.username}</b></td><td><b>${s.password}</b></td></tr>`;
+    html += `<tr><td>${s.studentId}</td><td>${s.sekolah}</td><td>${s.nama}</td><td>${s.tglLahir}</td><td>${s.kelas}</td><td>${s.rombel}</td><td>${s.noInduk}</td><td><b>${s.username}</b></td></tr>`;
   });
   $('#listSiswa').html(html);
 }
@@ -330,30 +330,10 @@ function printKartu() {
   let dataCetak = ALL_SISWA;
   let html = "";
   dataCetak.forEach(s => {
-    html += `<div class="card-cetak"><div class="header-kartu"><img src="https://pusmendik.kemdikbud.go.id/tka/images/logo-kemdikbud-71x72.png"><div><b>KARTU LOGIN</b><br>SIMULASI AKM</div></div><table class="tabel-kartu"><tr><td>Sekolah</td><td>: ${s.sekolah}</td></tr><tr><td>Nama</td><td>: <b>${s.nama}</b></td></tr><tr><td>Kelas</td><td>: ${s.kelas}</td></tr><tr><td>Username</td><td>: <b>${s.username}</b></td></tr><tr><td>Password</td><td>: <b>${s.password}</b></td></tr></table></div>`;
+    html += `<div class="card-cetak"><div class="header-kartu"><img src="https://pusmendik.kemdikbud.go.id/tka/images/logo-kemdikbud-71x72.png"><div><b>KARTU LOGIN</b><br>SIMULASI AKM</div></div><table class="tabel-kartu"><tr><td>Sekolah</td><td>: ${s.sekolah}</td></tr><tr><td>Nama</td><td>: <b>${s.nama}</b></td></tr><tr><td>Kelas</td><td>: ${s.kelas}</td></tr><tr><td>Username</td><td>: <b>${s.username}</b></td></tr></table></div>`;
   });
   $('#print-area').html(html);
   setTimeout(() => { window.print(); }, 500);
-}
-
-function prosesImporSiswa(input) {
-  const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const rows = e.target.result.split("\n").map(row => row.split(/[;,]/));
-    fetch('/api/ujian?action=importSiswa', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ dataRows: rows }) }).then(()=>{ Swal.fire("Berhasil", "Siswa berhasil diimpor.", "success"); loadSiswa(); });
-  };
-  reader.readAsText(file);
-}
-
-function prosesImporSoal(input) {
-  const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const rows = e.target.result.split("\n").map(row => row.split(/[;,]/));
-    fetch('/api/ujian?action=importSoal', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ dataRows: rows }) }).then(()=>{ Swal.fire("Berhasil", "Soal berhasil diimpor.", "success"); loadSoal(); });
-  };
-  reader.readAsText(file);
 }
 
 function exportHasil() {

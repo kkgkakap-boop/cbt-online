@@ -10,7 +10,7 @@
   <style>
     body { background:#e9ecef; }
     .header-custom {
-      background:#326698; background-image:url('https://pusmendik.kemendikdasmen.go.id/tka/images/bg-top.png');
+      background:#326698; background-image:url('https://pusmendik.kemdikdasmen.go.id/tka/images/bg-top.png');
       background-repeat:no-repeat; background-position:left; height:150px;
       position:fixed; top:0; left:0; right:0; z-index:10;
     }
@@ -22,7 +22,7 @@
 <div class="container-fluid text-white header-custom">
   <div class="row"><div class="col pl-5 pt-2">
     <table><tr>
-      <td><img style="height:70px" src="https://pusmendik.kemendikdasmen.go.id/tka/images/logo-kemdikbud-71x72.png"></td>
+      <td><img style="height:70px" src="https://pusmendik.kemdikdasmen.go.id/tka/images/logo-kemdikbud-71x72.png"></td>
       <td class="pl-2"><b>PUSMENDIK</b><br><small>APLIKASI ANBK</small></td>
     </tr></table>
   </div></div>
@@ -50,7 +50,7 @@
   </div>
 </div>
 
-<div id="loader"><img src="https://pusmendik.kemendikdasmen.go.id/tka/_assets/images/loader2.gif" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)"></div>
+<div id="loader"><img src="https://pusmendik.kemdikdasmen.go.id/tka/_assets/images/loader2.gif" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)"></div>
 
 <script>
 function login() {
@@ -59,10 +59,10 @@ function login() {
   if (!u || !p) return alert("Isi data lengkap!");
 
   $("#loader").show();
-  fetch('/api/login', {
+  fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: u, password: p })
+    body: JSON.stringify({ action: 'login_siswa', username: u, password: p })
   })
   .then(res => res.json())
   .then(res => {

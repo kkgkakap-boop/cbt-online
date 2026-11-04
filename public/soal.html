@@ -9,6 +9,8 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- DOMPurify untuk Keamanan XSS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <style>
     :root { --primary-blue: #326698; --secondary-blue: #74b9ff; --border-color: #eee; }
     body { font-family: Arial, sans-serif; background: white; margin: 0; padding-bottom: 80px; }
@@ -93,6 +95,7 @@ let jawabanUser = {};
 let raguRagu = {};
 let session = JSON.parse(sessionStorage.getItem("exam_session") || "{}");
 let timerInterval;
+let debounceTimer;
 
 $(document).ready(function() {
   if (!session.studentId) { window.location.href = "/index.html"; return; }
@@ -103,16 +106,15 @@ $(document).ready(function() {
   setupTimer();
 
   setInterval(() => {
-    if(session.sessionId) {
+    if(session.sessionToken) {
       fetch('/api/ujian?action=ping', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ sessionId: session.sessionId, jawaban: jawabanUser, ragu: raguRagu, lastIndex: index })
+        headers: { 'Content-Type': 'application/json', 'x-session-token': session.sessionToken }
       });
     }
   }, 30000);
 
-  $("#uraianBox").on("blur", function() {
+  $("#uraianBox").on("input", function() {
     let idS = SOAL[index].id;
     jawabanUser[idS] = $(this).val();
     syncProgress();
@@ -128,12 +130,12 @@ $(document).ready(function() {
 });
 
 function setupTimer() {
-  fetch(`/api/ujian?action=getStartTime&sessionId=${session.sessionId}`)
+  fetch(`/api/ujian?action=getStartTime`, {
+    headers: { 'x-session-token': session.sessionToken }
+  })
     .then(r => r.json())
     .then(res => {
-      let durasiMenit = parseInt(session.durasi) || 0;
-      let endTimeMs = res.startTime + (durasiMenit * 60 * 1000);
-      startTimer(endTimeMs);
+      startTimer(res.endTime);
     });
 }
 
@@ -155,7 +157,9 @@ function startTimer(endTime) {
 }
 
 function loadSoal() {
-  fetch(`/api/ujian?action=getSoal&token=${session.token}&studentId=${session.studentId}`)
+  fetch(`/api/ujian?action=getSoal`, {
+    headers: { 'x-session-token': session.sessionToken }
+  })
     .then(r => r.json())
     .then(res => {
       if (res.status === "SUCCESS") {
@@ -179,7 +183,7 @@ function tampil(i) {
   let idS = s.id;
   $("#noDisplay").text(i + 1);
   $(".btn-nomor").removeClass("current").eq(i).addClass("current");
-  $("#textSoal").html(s.pertanyaan);
+  $("#textSoal").html(DOMPurify.sanitize(s.pertanyaan));
   $("#opsiBox").html("").hide();
   $("#uraianBox").hide();
   $("#raguCheck").prop("checked", raguRagu[idS] || false);
@@ -189,7 +193,7 @@ function tampil(i) {
     ["A","B","C","D"].forEach(o => {
       if (s["opsi"+o]) {
         let sel = jawabanUser[idS] === o ? "selected" : "";
-        $("#opsiBox").append(`<div class="option-item ${sel}" onclick="pilih('${o}', this)"><div class="radio-circle"></div><div><b>${o}.</b> ${s["opsi"+o]}</div></div>`);
+        $("#opsiBox").append(`<div class="option-item ${sel}" onclick="pilih('${o}', this)"><div class="radio-circle"></div><div><b>${o}.</b> ${DOMPurify.sanitize(s["opsi"+o])}</div></div>`);
       }
     });
   } else {
@@ -209,11 +213,14 @@ function pilih(val, el) {
 }
 
 function syncProgress() {
-  fetch('/api/ujian?action=ping', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ sessionId: session.sessionId, jawaban: jawabanUser, ragu: raguRagu, lastIndex: index })
-  });
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    fetch('/api/ujian?action=ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-token': session.sessionToken },
+      body: JSON.stringify({ jawaban: jawabanUser, ragu: raguRagu, lastIndex: index })
+    });
+  }, 1500);
 }
 
 function renderGrid() {
@@ -237,8 +244,8 @@ function kirimFinal() {
   Swal.fire({ title: "Mengirim...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   fetch('/api/submit', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ sessionId: session.sessionId, studentId: session.studentId, jawaban: jawabanUser })
+    headers: { 'Content-Type': 'application/json', 'x-session-token': session.sessionToken },
+    body: JSON.stringify({ jawaban: jawabanUser })
   })
   .then(r => r.json())
   .then(res => {
@@ -249,6 +256,9 @@ function kirimFinal() {
         window.location.href = "/index.html";
       });
     } else { Swal.fire("Error", res.data, "error"); }
+  })
+  .catch(() => {
+    Swal.fire("Koneksi Gagal", "Pastikan internet terhubung lalu coba klik Selesai lagi.", "error");
   });
 }
 </script>
