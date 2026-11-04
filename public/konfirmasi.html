@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulasi AKM</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+  body { padding-top:150px; background:#e9ecef; }
+  .main-content { margin-top:20px; }
+  .header-custom {
+    background:#326698; background-image:url('https://pusmendik.kemdikbud.go.id/tka/images/bg-top.png');
+    background-repeat:no-repeat; background-position:left; height:150px; position:fixed; top:0; left:0; right:0; z-index:10;
+  }
+</style>
+</head>
+<body>
+
+<div id="dialogMulai" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.6); z-index:999;">
+  <div style="width:400px; margin:100px auto; background:white; padding:20px; border-radius:10px; text-align:center;">
+    <h4>Konfirmasi Ujian</h4>
+    <p id="infoUjian"></p>
+    <button onclick="mulaiUjian()" class="btn btn-primary">MULAI</button>
+  </div>
+</div>
+
+<div class="container-fluid text-white header-custom">
+  <div class="row"><div class="col pl-5 pt-2">
+    <table><tr>
+      <td><img style="height:70px" src="https://pusmendik.kemdikbud.go.id/tka/images/logo-kemdikbud-71x72.png"></td>
+      <td><b>PUSMENDIK</b><br><small>APLIKASI ANBK</small></td>
+    </tr></table>
+  </div></div>
+</div>
+
+<div class="container-fluid pl-5 pr-5 mb-5 main-content">
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="p-4" style="background:#fff;border-radius:10px;box-shadow:0 30px 60px rgba(0,0,0,0.2);background-image:url('https://pusmendik.kemdikbud.go.id/tka/images/logo-w.png');background-repeat:no-repeat;background-position:top right;">
+        <div class="mb-2">
+          <span id="token">Token : -</span>
+          <button class="btn btn-primary btn-sm ml-2" onclick="refreshToken()">Refresh</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="p-4" style="background:#fff;border-radius:10px;box-shadow:0 30px 60px rgba(0,0,0,0.2);">
+        <h5>Konfirmasi Data Peserta</h5>
+        <div class="form-group mt-3"><label>Kode / Nama</label><input type="text" class="form-control" id="dispNama" readonly></div>
+        <div class="form-group"><label>Kelas</label><input type="text" class="form-control" id="dispKelas" readonly></div>
+        <div class="form-group"><label>Nama Ulang</label><input type="text" class="form-control" id="inputNama"></div>
+        <div class="form-group"><label>Mata Pelajaran</label><select class="form-control" id="mapel"><option value="">-- Pilih --</option></select></div>
+        <div class="form-group"><label>Token</label><input type="text" class="form-control" id="input-token"></div>
+        <button class="btn btn-primary btn-block mt-4" onclick="submitKonfirmasi()" id="btnSubmit">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const dataSiswa = JSON.parse(sessionStorage.getItem("user_siswa"));
+
+$(document).ready(function() {
+  if (!dataSiswa) {
+    alert("Sesi berakhir, silakan login kembali.");
+    window.location.href = "/index.html";
+    return;
+  }
+  $("#dispNama").val(dataSiswa.nama);
+  $("#dispKelas").val(dataSiswa.kelas);
+  loadMapel();
+});
+
+function loadMapel() {
+  $("#mapel").html('<option value="">Memuat daftar ujian...</option>');
+  fetch(`/api/ujian?action=getActiveMapel&studentId=${dataSiswa.studentId}&kelas=${dataSiswa.kelas}`)
+    .then(r => r.json())
+    .then(listMapel => {
+      let html = '<option value="">-- Pilih Mata Pelajaran --</option>';
+      if (listMapel && listMapel.length > 0) {
+        listMapel.forEach(m => html += `<option value="${m}">${m}</option>`);
+      } else {
+        html = '<option value="">Tidak ada ujian aktif</option>';
+        $("#btnSubmit").hide();
+      }
+      $("#mapel").html(html);
+    });
+}
+
+function submitKonfirmasi() {
+  const inputNama = ($("#inputNama").val() || "").trim();
+  const mapel = $("#mapel").val();
+  const token = ($("#input-token").val() || "").trim();
+
+  if (!inputNama || !mapel || !token) return alert("Harap isi semua kolom!");
+  if (inputNama.toLowerCase() !== dataSiswa.nama.toLowerCase()) return alert("Input Nama harus sesuai!");
+
+  $("#btnSubmit").prop('disabled', true).html('Memproses...');
+
+  fetch('/api/ujian?action=checkToken', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId: dataSiswa.studentId, nama: dataSiswa.nama, kelas: dataSiswa.kelas, mapel, token })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "SUCCESS") {
+      sessionStorage.setItem("exam_session", JSON.stringify(res.data));
+      showKonfirmasiMulai(res.data);
+    } else {
+      alert(res.data);
+      $("#btnSubmit").prop('disabled', false).text("Submit");
+    }
+  });
+}
+
+function refreshToken() { loadMapel(); alert("Data ujian diperbarui."); }
+function showKonfirmasiMulai(data) {
+  $("#infoUjian").html(`<b>Nama:</b> ${data.nama}<br><b>Kelas:</b> ${data.kelas}<br><b>Mapel:</b> ${data.mapel}<br><b>Durasi:</b> ${data.durasi} menit`);
+  $("#dialogMulai").show();
+}
+function mulaiUjian() { window.location.href = "/soal.html"; }
+</script>
+</body>
+</html>

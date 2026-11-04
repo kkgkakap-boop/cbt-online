@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi AKM - CBT System</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root { --primary-blue: #326698; --secondary-blue: #74b9ff; --border-color: #eee; }
+    body { font-family: Arial, sans-serif; background: white; margin: 0; padding-bottom: 80px; }
+    .header-top { background: var(--primary-blue); background-image: url('https://pusmendik.kemdikbud.go.id/tka/images/bg-top.png'); background-repeat: no-repeat; background-position: left; background-size: contain; color: white; height: 100px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 10px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-section { display: flex; align-items: center; }
+    .logo-section img { height: 60px; margin-right: 15px; }
+    .main-wrapper { margin-top: 120px; padding: 0 30px 50px 30px; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+    .soal-container { border: 2px solid var(--border-color); border-top: 10px solid #ddd; padding: 30px; min-height: 400px; }
+    .option-item { display: flex; align-items: flex-start; margin-bottom: 15px; cursor: pointer; padding: 10px; border-radius: 5px; transition: 0.2s; border: 1px solid transparent; }
+    .option-item:hover { background: #f0f7ff; }
+    .option-item.selected { background: #e3f2fd; border: 1px solid var(--secondary-blue); }
+    .radio-circle { width: 24px; height: 24px; border: 2px solid var(--primary-blue); border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .option-item.selected .radio-circle { background: var(--primary-blue); }
+    .option-item.selected .radio-circle::after { content: ""; width: 10px; height: 10px; background: white; border-radius: 50%; }
+    #nomorGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 10px; padding: 15px; }
+    .btn-nomor { height: 45px; display: flex; align-items: center; justify-content: center; border: 1px solid #ccc; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    .btn-nomor.current { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+    .btn-nomor.filled { background: #28a745; color: white; border-color: #28a745; }
+    .btn-nomor.ragu { background: #ffc107; color: black; border-color: #ffc107; }
+    .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #f1f1f1; padding: 15px 30px; display: flex; justify-content: space-between; border-top: 1px solid #ddd; z-index: 1000; }
+  </style>
+</head>
+
+<body>
+
+<div class="header-top">
+  <div class="logo-section">
+    <img src="https://pusmendik.kemdikbud.go.id/tka/images/logo-kemdikbud-71x72.png">
+    <div>
+      <div style="font-size: 18px; font-weight: bold;">PUSMENDIK</div>
+      <div style="font-size: 12px;">APLIKASI ANBK</div>
+    </div>
+  </div>
+  <div class="text-right d-none d-md-block">
+    <span id="txtUserDisplay" style="margin-right: 10px; font-size: 13px;">PESERTA</span>
+    <i class="fa fa-graduation-cap"></i>
+  </div>
+</div>
+
+<div class="main-wrapper">
+  <div class="status-bar">
+    <div>Soal nomor <span id="noDisplay" style="font-size: 24px; font-weight: bold; color: var(--primary-blue);">1</span></div>
+    <div>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 mr-2">Sisa Waktu: <b id="timer">00:00:00</b></button>
+      <button class="btn btn-primary btn-sm rounded-pill px-3" data-toggle="modal" data-target="#modalDaftarSoal">Daftar Soal <i class="fa fa-th-large ml-1"></i></button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="mb-2"><small class="text-muted">Mata Ujian:</small> <b id="txtMapel">Memuat...</b></div>
+      <div class="soal-container shadow-sm bg-white">
+        <div id="textSoal" style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">Mengambil data soal...</div>
+        <div id="opsiBox"></div>
+        <textarea id="uraianBox" class="form-control" style="display:none; height:200px;" placeholder="Ketik jawaban Anda di sini..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <button class="btn btn-secondary px-4" onclick="prev()">SOAL SEBELUMNYA</button>
+  <div class="custom-control custom-checkbox pt-2">
+    <input type="checkbox" class="custom-control-input" id="raguCheck">
+    <label class="custom-control-label font-weight-bold text-warning" for="raguCheck">RAGU-RAGU</label>
+  </div>
+  <button class="btn btn-primary px-4" id="btnNext" onclick="next()">SOAL BERIKUTNYA</button>
+</div>
+
+<div class="modal fade" id="modalDaftarSoal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Navigasi Soal</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
+    <div class="modal-body"><div id="nomorGrid"></div></div>
+  </div></div>
+</div>
+
+<script>
+let SOAL = [];
+let index = 0;
+let jawabanUser = {};
+let raguRagu = {};
+let session = JSON.parse(sessionStorage.getItem("exam_session") || "{}");
+let timerInterval;
+
+$(document).ready(function() {
+  if (!session.studentId) { window.location.href = "/index.html"; return; }
+  $("#txtMapel").text(session.mapel);
+  $("#txtUserDisplay").text(session.nama);
+
+  loadSoal();
+  setupTimer();
+
+  setInterval(() => {
+    if(session.sessionId) {
+      fetch('/api/ujian?action=ping', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ sessionId: session.sessionId, jawaban: jawabanUser, ragu: raguRagu, lastIndex: index })
+      });
+    }
+  }, 30000);
+
+  $("#uraianBox").on("blur", function() {
+    let idS = SOAL[index].id;
+    jawabanUser[idS] = $(this).val();
+    syncProgress();
+    updateGridStatus();
+  });
+
+  $("#raguCheck").on("change", function() {
+    let idS = SOAL[index].id;
+    raguRagu[idS] = $(this).is(":checked");
+    syncProgress();
+    updateGridStatus();
+  });
+});
+
+function setupTimer() {
+  fetch(`/api/ujian?action=getStartTime&sessionId=${session.sessionId}`)
+    .then(r => r.json())
+    .then(res => {
+      let durasiMenit = parseInt(session.durasi) || 0;
+      let endTimeMs = res.startTime + (durasiMenit * 60 * 1000);
+      startTimer(endTimeMs);
+    });
+}
+
+function startTimer(endTime) {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    let diff = endTime - new Date().getTime();
+    if (diff <= 0) {
+      clearInterval(timerInterval);
+      $("#timer").text("00:00:00");
+      Swal.fire({ icon: 'warning', title: 'Waktu Habis', text: 'Jawaban dikirim otomatis.', allowOutsideClick: false }).then(() => kirimFinal());
+      return;
+    }
+    let h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    let s = Math.floor((diff % (1000 * 60)) / 1000);
+    $("#timer").text(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+  }, 1000);
+}
+
+function loadSoal() {
+  fetch(`/api/ujian?action=getSoal&token=${session.token}&studentId=${session.studentId}`)
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "SUCCESS") {
+        SOAL = res.data.soal || [];
+        if (res.data.progress) {
+          jawabanUser = res.data.progress.jawaban || {};
+          raguRagu = res.data.progress.ragu || {};
+          index = res.data.progress.lastIndex || 0;
+        }
+        renderGrid();
+        tampil(index);
+      } else {
+        $("#textSoal").html(`<div class="alert alert-danger">${res.data}</div>`);
+      }
+    });
+}
+
+function tampil(i) {
+  index = i;
+  let s = SOAL[i];
+  let idS = s.id;
+  $("#noDisplay").text(i + 1);
+  $(".btn-nomor").removeClass("current").eq(i).addClass("current");
+  $("#textSoal").html(s.pertanyaan);
+  $("#opsiBox").html("").hide();
+  $("#uraianBox").hide();
+  $("#raguCheck").prop("checked", raguRagu[idS] || false);
+
+  if (s.jenis === "PG") {
+    $("#opsiBox").show();
+    ["A","B","C","D"].forEach(o => {
+      if (s["opsi"+o]) {
+        let sel = jawabanUser[idS] === o ? "selected" : "";
+        $("#opsiBox").append(`<div class="option-item ${sel}" onclick="pilih('${o}', this)"><div class="radio-circle"></div><div><b>${o}.</b> ${s["opsi"+o]}</div></div>`);
+      }
+    });
+  } else {
+    $("#uraianBox").show().val(jawabanUser[idS] || "");
+  }
+  $("#btnNext").text(index === SOAL.length - 1 ? "SELESAI" : "SOAL BERIKUTNYA");
+  syncProgress();
+}
+
+function pilih(val, el) {
+  let idS = SOAL[index].id;
+  jawabanUser[idS] = val;
+  $(".option-item").removeClass("selected");
+  $(el).addClass("selected");
+  syncProgress();
+  updateGridStatus();
+}
+
+function syncProgress() {
+  fetch('/api/ujian?action=ping', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sessionId: session.sessionId, jawaban: jawabanUser, ragu: raguRagu, lastIndex: index })
+  });
+}
+
+function renderGrid() {
+  let h = "";
+  SOAL.forEach((s, i) => {
+    let cls = jawabanUser[s.id] ? "filled" : "";
+    if (raguRagu[s.id]) cls = "ragu";
+    h += `<div class="btn-nomor ${cls}" onclick="tampil(${i})" data-dismiss="modal">${i+1}</div>`;
+  });
+  $("#nomorGrid").html(h);
+}
+
+function updateGridStatus() { renderGrid(); }
+function next() {
+  if (index < SOAL.length - 1) tampil(index + 1);
+  else Swal.fire({ title: "Selesai?", text: "Jawaban akan dikirim.", icon: "question", showCancelButton: true }).then(r => { if(r.isConfirmed) kirimFinal(); });
+}
+function prev() { if (index > 0) tampil(index - 1); }
+
+function kirimFinal() {
+  Swal.fire({ title: "Mengirim...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  fetch('/api/submit', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sessionId: session.sessionId, studentId: session.studentId, jawaban: jawabanUser })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "SUCCESS") {
+      clearInterval(timerInterval);
+      Swal.fire("Berhasil", `Ujian Selesai. Nilai Total: ${res.data.nilaiTotal}`, "success").then(() => {
+        sessionStorage.clear();
+        window.location.href = "/index.html";
+      });
+    } else { Swal.fire("Error", res.data, "error"); }
+  });
+}
+</script>
+</body>
+</html>

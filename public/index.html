@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulasi AKM | LOGIN</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <style>
+    body { background:#e9ecef; }
+    .header-custom {
+      background:#326698; background-image:url('https://pusmendik.kemendikdasmen.go.id/tka/images/bg-top.png');
+      background-repeat:no-repeat; background-position:left; height:150px;
+      position:fixed; top:0; left:0; right:0; z-index:10;
+    }
+    #loader { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#fff; opacity:0.8; z-index:9999; }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid text-white header-custom">
+  <div class="row"><div class="col pl-5 pt-2">
+    <table><tr>
+      <td><img style="height:70px" src="https://pusmendik.kemendikdasmen.go.id/tka/images/logo-kemdikbud-71x72.png"></td>
+      <td class="pl-2"><b>PUSMENDIK</b><br><small>APLIKASI ANBK</small></td>
+    </tr></table>
+  </div></div>
+</div>
+
+<div class="container" style="margin-top:170px;">
+  <div class="d-flex justify-content-center">
+    <div class="card shadow" style="width:420px; border-radius:10px; border:0;">
+      <div class="card-body p-4">
+        <h5><b>Selamat Datang</b></h5>
+        <small class="text-muted">Silakan login dengan username dan password Anda</small>
+        <form id="formLogin" class="mt-4">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend"><span class="input-group-text bg-white border-0"><i class="fa fa-user-circle"></i></span></div>
+            <input type="text" class="form-control border-0" style="border-bottom:2px solid #eee;" placeholder="Username" id="username">
+          </div>
+          <div class="input-group mb-4">
+            <div class="input-group-prepend"><span class="input-group-text bg-white border-0"><i class="fa fa-lock"></i></span></div>
+            <input type="password" class="form-control border-0" style="border-bottom:2px solid #eee;" placeholder="Password" id="password">
+          </div>
+          <button type="button" class="btn btn-primary btn-block" style="border-radius:25px;" onclick="login()">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loader"><img src="https://pusmendik.kemendikdasmen.go.id/tka/_assets/images/loader2.gif" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)"></div>
+
+<script>
+function login() {
+  const u = $("#username").val();
+  const p = $("#password").val();
+  if (!u || !p) return alert("Isi data lengkap!");
+
+  $("#loader").show();
+  fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: u, password: p })
+  })
+  .then(res => res.json())
+  .then(res => {
+    $("#loader").hide();
+    if (res.status === "SUCCESS") {
+      sessionStorage.setItem("user_siswa", JSON.stringify(res.data));
+      window.location.href = "/konfirmasi.html";
+    } else {
+      alert(res.data);
+    }
+  })
+  .catch(err => { $("#loader").hide(); alert("Error: " + err.message); });
+}
+</script>
+</body>
+</html>
