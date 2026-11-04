@@ -1,130 +1,41 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>CBT Admin Panel</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-</head>
-<body class="bg-light">
-<div class="container-fluid p-4">
-  <h2 id="adminTitle">Panel Admin</h2>
-  <hr>
-  <div class="row">
-    <div class="col-md-4">
-      <div class="card p-3 shadow-sm">
-        <h5>Aktivasi Ujian & Centang Peserta</h5>
-        <div class="form-group"><label>Mata Pelajaran</label><select id="uj-mapel" class="form-control"><option value="">Pilih Mapel</option></select></div>
-        <div class="form-group"><label>Kelas</label><select id="uj-kelas" class="form-control"><option value="Kelas 1">Kelas 1</option><option value="Kelas 2">Kelas 2</option></select></div>
-        <div class="form-group"><label>Gelombang / Sesi</label><input type="text" id="uj-sesi" class="form-control" value="1"></div>
-        <div class="form-group"><label>Durasi (Menit)</label><input type="number" id="uj-durasi" class="form-control" value="60"></div>
-        <button class="btn btn-dark btn-sm mb-3" onclick="generateToken()">Generate Token</button>
-        <div class="form-group"><label>Token Aktif</label><input type="text" id="uj-token" class="form-control font-weight-bold text-primary" readonly></div>
-        
-        <hr>
-        <h6>Pilih Peserta Ujian:</h6>
-        <div style="max-height: 200px; overflow-y: scroll;" class="border p-2 mb-3" id="listCheckSiswa">
-          <!-- Checkbox siswa dimuat otomatis -->
-        </div>
+// Ambil data sesi admin saat halaman dibuka
+const adminSession = JSON.parse(sessionStorage.getItem("admin_session") || "{}");
 
-        <button class="btn btn-primary btn-block" onclick="aktifkanUjian()">Aktifkan Ujian & Simpan Peserta</button>
-      </div>
-    </div>
-    <div class="col-md-8">
-      <div class="card p-3 shadow-sm">
-        <h5>Riwayat Token & Ujian Aktif</h5>
-        <table class="table table-sm table-bordered">
-          <thead><tr><th>Token</th><th>Mapel</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead>
-          <tbody id="listRiwayat"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+$(document).ready(function() {
+  // 1. Validasi Keamanan: Jika belum login sebagai admin, tendang ke index.html
+  if (!adminSession.username || !adminSession.role) {
+    alert("Akses ditolak! Silakan login sebagai Admin terlebih dahulu.");
+    window.location.href = "/index.html";
+    return;
+  }
 
-<script>
-const admin = JSON.parse(sessionStorage.getItem("admin_session") || "{}");
+  // 2. Tampilkan Nama & Peran Admin di Header Panel
+  let infoRole = adminSession.role === 'PUSAT' ? 'Admin Pusat (Super Admin)' : `Admin Sekolah: ${adminSession.sekolah}`;
+  $('#adminTitle').text(`Panel Management CBT - ${infoRole}`);
 
-$(document).ready(() => {
-  if(!admin.username) window.location.href = "/index.html";
-  $("#adminTitle").text(`Panel Admin (${admin.role === 'PUSAT' ? 'Admin Pusat' : 'Admin Sekolah: ' + admin.sekolah})`);
+  // 3. Atur Fitur Berdasarkan Role (Role-Based Access Control)
+  if (adminSession.role === 'SEKOLAH') {
+    // Sembunyikan menu/tombol tertentu jika login sebagai Admin Sekolah
+    $('#menu-upload-soal').hide(); // Sembunyikan upload soal jika soal terpusat (TKA)
+    $('#fSekolah').val(adminSession.sekolah).prop('disabled', true); // Kunci filter ke sekolah sendiri
+  }
 
-  loadReferensi();
-  loadSiswaCheckbox();
-  loadRiwayat();
+  // Muat data dashboard pertama kali
+  loadDashboard();
 });
 
-function loadReferensi() {
-  fetch(`/api/ujian?action=getReferensi`).then(r=>r.json()).then(ref => {
-    let h = '<option value="">Pilih Mapel</option>';
-    ref.mapel.forEach(m => h += `<option value="${m}">${m}</option>`);
-    $("#uj-mapel").html(h);
-  });
+// Fungsi untuk mengirim role & sekolah saat mengambil data ke backend
+function getAdminParams() {
+  return `role=${adminSession.role}&sekolah=${encodeURIComponent(adminSession.sekolah || '')}`;
 }
 
-function loadSiswaCheckbox() {
-  fetch(`/api/ujian?action=getAllSiswa&role=${admin.role}&sekolah=${admin.sekolah || ''}`)
-    .then(r => r.json()).then(siswa => {
-      let h = '';
-      siswa.forEach(s => {
-        h += `<div class="form-check"><input class="form-check-input siswa-checkbox" type="checkbox" value="${s.studentId}" id="s_${s.studentId}" checked><label class="form-check-label" for="s_${s.studentId}">${s.nama} (${s.kelas})</label></div>`;
-      });
-      $("#listCheckSiswa").html(h);
+function loadDashboard() {
+  fetch(`/api/ujian?action=getDashboardData&${getAdminParams()}`)
+    .then(r => r.json())
+    .then(res => {
+      $('#stat-siswa').text(res.totalSiswa || 0);
+      $('#stat-online').text(res.siswaOnline || 0);
+      $('#stat-ujian').text(res.ujianAktif || 0);
+      $('#stat-soal').text(res.totalSoal || 0);
     });
 }
-
-function generateToken() {
-  $("#uj-token").val(Math.random().toString(36).substring(2, 8).toUpperCase());
-}
-
-function aktifkanUjian() {
-  const token = $("#uj-token").val();
-  const kelas = $("#uj-kelas").val();
-  const mapel = $("#uj-mapel").val();
-  const durasi = $("#uj-durasi").val();
-  const sesi = $("#uj-sesi").val();
-
-  const selectedStudentIds = [];
-  $('.siswa-checkbox:checked').each(function() {
-    selectedStudentIds.push($(this).val());
-  });
-
-  if(!token || !mapel || selectedStudentIds.length === 0) return alert("Lengkapi data dan centang minimal 1 siswa!");
-
-  fetch('/api/ujian?action=simpanUjianAktif', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token, kelas, mapel, durasi, sesi,
-      gelombang: '1',
-      sekolahOwner: admin.role === 'SEKOLAH' ? admin.sekolah : 'PUSAT',
-      selectedStudentIds
-    })
-  }).then(r => r.json()).then(res => {
-    if(res.status === "SUCCESS") {
-      alert("Ujian berhasil diaktifkan dengan token: " + token);
-      loadRiwayat();
-    }
-  });
-}
-
-function loadRiwayat() {
-  fetch(`/api/ujian?action=getRiwayatUjian&role=${admin.role}&sekolah=${admin.sekolah || ''}`)
-    .then(r => r.json()).then(res => {
-      let h = '';
-      res.forEach(r => {
-        h += `<tr><td><b>${r.token}</b></td><td>${r.mapel}</td><td>${r.kelas}</td><td>${r.status}</td><td><button class="btn btn-danger btn-sm" onclick="hapusUjian('${r.token}')">Hapus</button></td></tr>`;
-      });
-      $("#listRiwayat").html(h);
-    });
-}
-
-function hapusUjian(token) {
-  if(confirm("Hapus ujian?")) {
-    fetch('/api/ujian?action=hapusUjian', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({token}) }).then(() => loadRiwayat());
-  }
-}
-</script>
-</body>
-</html>
