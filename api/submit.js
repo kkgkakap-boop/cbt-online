@@ -20,23 +20,15 @@ export default async function handler(req, res) {
 
     let pgScore = 0;
     let pgDetail = {};
-    let urDetail = {};
 
     for (let s of (listSoal || [])) {
       let idS = String(s.id).trim();
       let uAns = (jawaban[idS] || "").toString().trim();
-      let jns = String(s.jenis).toUpperCase();
-      let bbt = parseFloat(s.skor || 0);
-
-      if (jns === 'PG') {
+      if (String(s.jenis).toUpperCase() === 'PG') {
         pgDetail[idS] = uAns;
-        if (uAns.toUpperCase() === String(s.kunci).trim().toUpperCase()) pgScore += bbt;
-      } else if (jns === 'U') {
-        urDetail[idS] = uAns;
+        if (uAns.toUpperCase() === String(s.kunci).trim().toUpperCase()) pgScore += parseFloat(s.skor || 0);
       }
     }
-
-    let total = Math.round(pgScore);
 
     const { error: insertErr } = await supabase.from('hasil_ujian').insert([{
       student_id: studentId,
@@ -45,19 +37,16 @@ export default async function handler(req, res) {
       kelas: activeSess.kelas,
       mapel: activeSess.mapel,
       jawaban: JSON.stringify(pgDetail),
-      uraian_detail: JSON.stringify(urDetail),
       pg_score: pgScore,
-      uraian_score: 0,
-      total_score: total
+      total_score: pgScore
     }]);
 
     if (insertErr) {
-      return res.status(200).json({ status: 'SUCCESS', data: { nilaiTotal: total } });
+      return res.status(200).json({ status: 'SUCCESS', data: { nilaiTotal: pgScore } });
     }
 
     await supabase.from('active_sessions').update({ status: 'SELESAI' }).eq('session_token', sessionToken);
-
-    return res.status(200).json({ status: 'SUCCESS', data: { nilaiPG: pgScore, nilaiTotal: total } });
+    return res.status(200).json({ status: 'SUCCESS', data: { nilaiTotal: pgScore } });
   } catch (err) {
     return res.status(500).json({ status: 'ERROR', data: 'Gagal memproses pengiriman ujian.' });
   }

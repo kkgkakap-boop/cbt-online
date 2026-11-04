@@ -2,349 +2,128 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CBT ADMIN PANEL</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; overflow-x: hidden; }
-    #wrapper { display: flex; width: 100%; align-items: stretch; }
-    #sidebar { min-width: 250px; max-width: 250px; background: #343a40; color: #fff; transition: all 0.3s; min-height: 100vh; position: fixed; }
-    #sidebar .sidebar-header { padding: 20px; background: #2c3136; border-bottom: 1px solid #474f57; }
-    #sidebar ul.components { padding: 20px 0; }
-    #sidebar ul li a { padding: 12px 20px; font-size: 0.95em; display: block; color: #adb5bd; text-decoration: none; transition: 0.2s; }
-    #sidebar ul li a:hover { color: #fff; background: #495057; }
-    #sidebar ul li.active > a { color: #fff; background: #007bff; }
-    #sidebar ul li a i { margin-right: 10px; width: 20px; text-align: center; }
-    #content { width: calc(100% - 250px); margin-left: 250px; transition: all 0.3s; padding: 20px; }
-    .card-stat { border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .page-section { display: none; }
-    .page-section.active { display: block; }
-    .card-cetak { width: 100%; max-width: 450px; border: 2px solid #333; padding: 15px; margin-bottom: 10px; background: #fff; border-radius: 8px; font-size: 13px; display: inline-block; }
-    .header-kartu { display: flex; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
-    .header-kartu img { height: 45px; margin-right: 15px; }
-    .tabel-kartu { width: 100%; }
-    @media print {
-      @page { size: 215mm 330mm; margin: 10mm; }
-      body * { visibility: hidden; }
-      #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; }
-      .card-cetak { width: 48%; margin: 1%; border: 1px solid #000; float: left; }
-    }
-  </style>
+  <title>CBT Admin Panel</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </head>
-<body>
-
-<div id="wrapper">
-  <nav id="sidebar">
-    <div class="sidebar-header">
-      <h4><i class="fa fa-graduation-cap"></i> CBT PANEL</h4>
-      <small class="text-muted">v2.0 - Management</small>
-    </div>
-
-    <ul class="list-unstyled components">
-      <li class="active"><a href="#" onclick="showPage('dashboard', this)"><i class="fa fa-tachometer-alt"></i> Dashboard</a></li>
-      <li><a href="#" onclick="showPage('siswa', this)"><i class="fa fa-users"></i> Data Siswa</a></li>
-      <li><a href="#" onclick="showPage('aktif', this)"><i class="fa fa-broadcast-tower"></i> Siswa Aktif</a></li>
-      <li><a href="#" onclick="showPage('ujian', this)"><i class="fa fa-calendar-check"></i> Kelola Ujian</a></li>
-      <li><a href="#" onclick="showPage('soal', this)"><i class="fa fa-file-alt"></i> Upload Soal</a></li>
-      <li><a href="#" onclick="showPage('hasil', this)"><i class="fa fa-chart-bar"></i> Hasil Ujian</a></li>
-      <li><a href="/index.html" target="_blank" class="text-warning"><i class="fa fa-external-link-alt"></i> Buka Link Ujian</a></li>
-    </ul>
-  </nav>
-
-  <div id="content">
-    <div id="page-dashboard" class="page-section active">
-      <h3>Dashboard</h3>
-      <div class="row mt-4">
-        <div class="col-md-3"><div class="card card-stat p-3 bg-white text-dark"><h6>Total Siswa</h6><h2 id="stat-siswa">0</h2></div></div>
-        <div class="col-md-3"><div class="card card-stat p-3 bg-white text-dark"><h6>Siswa Online</h6><h2 id="stat-online">0</h2></div></div>
-        <div class="col-md-3"><div class="card card-stat p-3 bg-white text-dark"><h6>Ujian Aktif</h6><h2 id="stat-ujian">0</h2></div></div>
-        <div class="col-md-3"><div class="card card-stat p-3 bg-white text-dark"><h6>Total Soal</h6><h2 id="stat-soal">0</h2></div></div>
-      </div>
-    </div>
-
-    <div id="page-siswa" class="page-section">
-      <div class="d-flex justify-content-between align-items-center">
-        <h3>Data Siswa</h3>
-        <button class="btn btn-success btn-sm" onclick="$('#fileSiswa').click()"><i class="fa fa-file-excel"></i> Impor CSV</button>
-        <input type="file" id="fileSiswa" style="display:none" accept=".csv" onchange="prosesImporSiswa(this)">
-      </div>
-      <div class="card p-3 mt-3 shadow-sm">
-        <div class="row">
-          <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="fSekolah" placeholder="Filter Sekolah..."></div>
-          <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="fKelas" placeholder="Filter Kelas..."></div>
-          <div class="col-md-2"><button class="btn btn-dark btn-sm btn-block" onclick="filterTabelSiswa()">OK</button></div>
-          <div class="col-md-2"><button class="btn btn-outline-secondary btn-sm btn-block" onclick="printKartu()">Cetak Kartu</button></div>
+<body class="bg-light">
+<div class="container-fluid p-4">
+  <h2 id="adminTitle">Panel Admin</h2>
+  <hr>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card p-3 shadow-sm">
+        <h5>Aktivasi Ujian & Centang Peserta</h5>
+        <div class="form-group"><label>Mata Pelajaran</label><select id="uj-mapel" class="form-control"><option value="">Pilih Mapel</option></select></div>
+        <div class="form-group"><label>Kelas</label><select id="uj-kelas" class="form-control"><option value="Kelas 1">Kelas 1</option><option value="Kelas 2">Kelas 2</option></select></div>
+        <div class="form-group"><label>Gelombang / Sesi</label><input type="text" id="uj-sesi" class="form-control" value="1"></div>
+        <div class="form-group"><label>Durasi (Menit)</label><input type="number" id="uj-durasi" class="form-control" value="60"></div>
+        <button class="btn btn-dark btn-sm mb-3" onclick="generateToken()">Generate Token</button>
+        <div class="form-group"><label>Token Aktif</label><input type="text" id="uj-token" class="form-control font-weight-bold text-primary" readonly></div>
+        
+        <hr>
+        <h6>Pilih Peserta Ujian:</h6>
+        <div style="max-height: 200px; overflow-y: scroll;" class="border p-2 mb-3" id="listCheckSiswa">
+          <!-- Checkbox siswa dimuat otomatis -->
         </div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-sm table-bordered bg-white shadow-sm" style="font-size: 12px;">
-          <thead class="bg-primary text-white text-center">
-            <tr><th>ID</th><th>Sekolah</th><th>Nama</th><th>Tgl Lahir</th><th>Kelas</th><th>Rombel</th><th>No Induk</th><th>Username</th></tr>
-          </thead>
-          <tbody id="listSiswa"></tbody>
-        </table>
+
+        <button class="btn btn-primary btn-block" onclick="aktifkanUjian()">Aktifkan Ujian & Simpan Peserta</button>
       </div>
     </div>
-
-    <div id="page-aktif" class="page-section">
-      <div class="d-flex justify-content-between align-items-center">
-        <h3>Monitoring Siswa Aktif</h3>
-        <button class="btn btn-outline-primary btn-sm" onclick="loadAktif()"><i class="fa fa-sync"></i> Refresh Data</button>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-sm table-bordered bg-white shadow-sm" style="font-size: 11px;">
-          <thead class="bg-danger text-white text-center">
-            <tr><th>No</th><th>Sekolah</th><th>Nama / ID</th><th>Kelas</th><th>Mapel</th><th>Token</th><th>Status & Ping</th><th>Aksi</th></tr>
-          </thead>
-          <tbody id="listAktif"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="page-ujian" class="page-section">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="card p-3 shadow-sm">
-            <h5>Set Ujian Baru</h5><hr>
-            <div class="form-group"><label>Kelas</label><select id="uj-kelas" class="form-control form-control-sm" onchange="validasiSoal()"><option value="">-- Pilih Kelas --</option></select></div>
-            <div class="form-group"><label>Mata Pelajaran</label><select id="uj-mapel" class="form-control form-control-sm" onchange="validasiSoal()"><option value="">-- Pilih Mapel --</option></select><small id="msg-soal" class="form-text"></small></div>
-            <div class="form-group"><label>Durasi (Menit)</label><input type="number" id="uj-durasi" class="form-control form-control-sm" placeholder="Contoh: 60"></div>
-            <div class="form-group">
-              <label>Token</label>
-              <div class="input-group">
-                <input type="text" id="uj-token" class="form-control form-control-sm font-weight-bold text-primary" readonly placeholder="Klik Generate...">
-                <div class="input-group-append"><button class="btn btn-dark btn-sm" onclick="generateTokenOnly()">Acak</button></div>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="prosesSimpanUjian()">Simpan & Aktifkan Token</button>
-          </div>
-        </div>
-        <div class="col-md-8">
-          <div class="card p-3 shadow-sm">
-            <h5>Riwayat & Kontrol Ujian</h5>
-            <div class="table-responsive">
-              <table class="table table-sm table-bordered">
-                <thead class="bg-light text-center">
-                  <tr><th>Token</th><th>Kelas</th><th>Mapel</th><th>Status</th><th>Aksi</th></tr>
-                </thead>
-                <tbody id="listRiwayat"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="page-soal" class="page-section">
-      <div class="d-flex justify-content-between align-items-center">
-        <h3>Manajemen Soal Ujian</h3>
-        <div>
-          <button class="btn btn-success btn-sm" onclick="$('#fileSoal').click()"><i class="fa fa-file-import"></i> Impor Soal (CSV)</button>
-          <input type="file" id="fileSoal" style="display:none" accept=".csv" onchange="prosesImporSoal(this)">
-        </div>
-      </div>
-      <div class="card p-3 mt-3 shadow-sm border-left-primary">
-        <div class="row align-items-end">
-          <div class="col-md-3"><label class="small font-weight-bold">Kelas</label><select id="fKlsSoal" class="form-control form-control-sm"></select></div>
-          <div class="col-md-3"><label class="small font-weight-bold">Mata Pelajaran</label><select id="fMplSoal" class="form-control form-control-sm"></select></div>
-          <div class="col-md-2"><button class="btn btn-dark btn-sm btn-block" onclick="loadSoal()">Cek Soal</button></div>
-        </div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-sm table-bordered bg-white shadow-sm" style="font-size: 11px;">
-          <thead class="bg-secondary text-white text-center">
-            <tr><th>ID</th><th>Pertanyaan</th><th>Jenis</th><th>Skor</th><th>Status</th><th>Aksi</th></tr>
-          </thead>
-          <tbody id="listSoal"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="page-hasil" class="page-section">
-      <div class="d-flex justify-content-between align-items-center">
-        <h3>Hasil Ujian Siswa</h3>
-        <button class="btn btn-info btn-sm" onclick="exportHasil()"><i class="fa fa-file-excel"></i> Export Excel (CSV)</button>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-sm table-bordered bg-white shadow-sm" style="font-size: 12px;">
-          <thead class="bg-info text-white text-center">
-            <tr><th>No</th><th>Waktu Selesai</th><th>Sekolah</th><th>Nama / ID</th><th>Kelas</th><th>Mata Pelajaran</th><th>PG</th><th>Uraian</th><th>Total</th><th>Aksi</th></tr>
-          </thead>
-          <tbody id="listHasil"></tbody>
+    <div class="col-md-8">
+      <div class="card p-3 shadow-sm">
+        <h5>Riwayat Token & Ujian Aktif</h5>
+        <table class="table table-sm table-bordered">
+          <thead><tr><th>Token</th><th>Mapel</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="listRiwayat"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
 
-<div id="print-area"></div>
-
 <script>
-let ALL_SISWA = [], ALL_AKTIF = [], ALL_HASIL = [];
+const admin = JSON.parse(sessionStorage.getItem("admin_session") || "{}");
 
-$(document).ready(function() {
-  loadDashboard();
-  setInterval(loadDashboard, 30000);
+$(document).ready(() => {
+  if(!admin.username) window.location.href = "/index.html";
+  $("#adminTitle").text(`Panel Admin (${admin.role === 'PUSAT' ? 'Admin Pusat' : 'Admin Sekolah: ' + admin.sekolah})`);
+
+  loadReferensi();
+  loadSiswaCheckbox();
+  loadRiwayat();
 });
 
-function showPage(pageId, el) {
-  $('.page-section').removeClass('active');
-  $('#page-' + pageId).addClass('active');
-  $('#sidebar ul li').removeClass('active');
-  $(el).parent().addClass('active');
-
-  if(pageId === 'dashboard') loadDashboard();
-  if(pageId === 'siswa') loadSiswa();
-  if(pageId === 'aktif') loadAktif();
-  if(pageId === 'ujian') loadRiwayatUjian();
-  if(pageId === 'soal') loadSoal();
-  if(pageId === 'hasil') loadHasil();
-}
-
-function loadDashboard() {
-  fetch('/api/ujian?action=getDashboardData').then(r=>r.json()).then(res => {
-    $('#stat-siswa').text(res.totalSiswa || 0);
-    $('#stat-online').text(res.siswaOnline || 0);
-    $('#stat-ujian').text(res.ujianAktif || 0);
-    $('#stat-soal').text(res.totalSoal || 0);
+function loadReferensi() {
+  fetch(`/api/ujian?action=getReferensi`).then(r=>r.json()).then(ref => {
+    let h = '<option value="">Pilih Mapel</option>';
+    ref.mapel.forEach(m => h += `<option value="${m}">${m}</option>`);
+    $("#uj-mapel").html(h);
   });
 }
 
-function loadSiswa() {
-  fetch('/api/ujian?action=getAllSiswa').then(r=>r.json()).then(res => {
-    ALL_SISWA = res;
-    renderTabelSiswa(res);
-  });
-}
-
-function renderTabelSiswa(data) {
-  let html = "";
-  data.forEach(s => {
-    html += `<tr><td>${s.studentId}</td><td>${s.sekolah}</td><td>${s.nama}</td><td>${s.tglLahir}</td><td>${s.kelas}</td><td>${s.rombel}</td><td>${s.noInduk}</td><td><b>${s.username}</b></td></tr>`;
-  });
-  $('#listSiswa').html(html);
-}
-
-function filterTabelSiswa() {
-  let sek = $('#fSekolah').val().toLowerCase(), kls = $('#fKelas').val().toLowerCase();
-  renderTabelSiswa(ALL_SISWA.filter(s => s.sekolah.toLowerCase().includes(sek) && s.kelas.toLowerCase().includes(kls)));
-}
-
-function loadRiwayatUjian() {
-  fetch('/api/ujian?action=getReferensi').then(r=>r.json()).then(ref => {
-    let kHtml = '<option value="">-- Pilih Kelas --</option>', mHtml = '<option value="">-- Pilih Mapel --</option>';
-    ref.kelas.forEach(k => kHtml += `<option value="${k}">${k}</option>`);
-    ref.mapel.forEach(m => mHtml += `<option value="${m}">${m}</option>`);
-    $('#uj-kelas').html(kHtml); $('#uj-mapel').html(mHtml);
-  });
-  loadTabelRiwayat();
-}
-
-function loadTabelRiwayat() {
-  fetch('/api/ujian?action=getRiwayatUjian').then(r=>r.json()).then(res => {
-    let html = "";
-    res.forEach(r => {
-      let btnColor = r.status === 'AKTIF' ? 'btn-warning' : 'btn-success';
-      html += `<tr class="text-center"><td><b class="text-primary">${r.token}</b></td><td>${r.kelas}</td><td>${r.mapel}</td><td><span class="badge ${r.status === 'AKTIF' ? 'badge-success' : 'badge-secondary'}">${r.status}</span></td><td><button class="btn btn-xs ${btnColor}" onclick="toggleUjian('${r.token}','${r.status}')">${r.status === 'AKTIF' ? 'OFF' : 'ON'}</button> <button class="btn btn-xs btn-danger" onclick="hapusUjian('${r.token}')"><i class="fa fa-trash"></i></button></td></tr>`;
+function loadSiswaCheckbox() {
+  fetch(`/api/ujian?action=getAllSiswa&role=${admin.role}&sekolah=${admin.sekolah || ''}`)
+    .then(r => r.json()).then(siswa => {
+      let h = '';
+      siswa.forEach(s => {
+        h += `<div class="form-check"><input class="form-check-input siswa-checkbox" type="checkbox" value="${s.studentId}" id="s_${s.studentId}" checked><label class="form-check-label" for="s_${s.studentId}">${s.nama} (${s.kelas})</label></div>`;
+      });
+      $("#listCheckSiswa").html(h);
     });
-    $('#listRiwayat').html(html);
+}
+
+function generateToken() {
+  $("#uj-token").val(Math.random().toString(36).substring(2, 8).toUpperCase());
+}
+
+function aktifkanUjian() {
+  const token = $("#uj-token").val();
+  const kelas = $("#uj-kelas").val();
+  const mapel = $("#uj-mapel").val();
+  const durasi = $("#uj-durasi").val();
+  const sesi = $("#uj-sesi").val();
+
+  const selectedStudentIds = [];
+  $('.siswa-checkbox:checked').each(function() {
+    selectedStudentIds.push($(this).val());
+  });
+
+  if(!token || !mapel || selectedStudentIds.length === 0) return alert("Lengkapi data dan centang minimal 1 siswa!");
+
+  fetch('/api/ujian?action=simpanUjianAktif', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token, kelas, mapel, durasi, sesi,
+      gelombang: '1',
+      sekolahOwner: admin.role === 'SEKOLAH' ? admin.sekolah : 'PUSAT',
+      selectedStudentIds
+    })
+  }).then(r => r.json()).then(res => {
+    if(res.status === "SUCCESS") {
+      alert("Ujian berhasil diaktifkan dengan token: " + token);
+      loadRiwayat();
+    }
   });
 }
 
-function generateTokenOnly() { $('#uj-token').val(Math.random().toString(36).substring(2, 8).toUpperCase()); }
-
-function validasiSoal() {
-  let kls = $('#uj-kelas').val(), mpl = $('#uj-mapel').val();
-  if (kls && mpl) {
-    fetch(`/api/ujian?action=cekKetersediaanSoal&kelas=${kls}&mapel=${mpl}`).then(r=>r.json()).then(jumlah => {
-      $('#msg-soal').html(jumlah > 0 ? `<span class="text-success"><i class="fa fa-check"></i> Tersedia ${jumlah} soal AKTIF</span>` : `<span class="text-danger">Soal belum ada / AKTIF!</span>`);
+function loadRiwayat() {
+  fetch(`/api/ujian?action=getRiwayatUjian&role=${admin.role}&sekolah=${admin.sekolah || ''}`)
+    .then(r => r.json()).then(res => {
+      let h = '';
+      res.forEach(r => {
+        h += `<tr><td><b>${r.token}</b></td><td>${r.mapel}</td><td>${r.kelas}</td><td>${r.status}</td><td><button class="btn btn-danger btn-sm" onclick="hapusUjian('${r.token}')">Hapus</button></td></tr>`;
+      });
+      $("#listRiwayat").html(h);
     });
-  }
-}
-
-function prosesSimpanUjian() {
-  let data = { token: $('#uj-token').val(), kelas: $('#uj-kelas').val(), mapel: $('#uj-mapel').val(), durasi: $('#uj-durasi').val() };
-  if(!data.token || !data.kelas || !data.mapel || !data.durasi) return Swal.fire("Error", "Lengkapi Data!", "error");
-  fetch('/api/ujian?action=simpanUjian', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(()=>{ Swal.fire("Berhasil", "Token disimpan.", "success"); loadRiwayatUjian(); });
-}
-
-function toggleUjian(t, s) {
-  fetch('/api/ujian?action=setUjianStatus', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token: t, status: s === 'AKTIF' ? 'NONAKTIF' : 'AKTIF' }) }).then(()=>loadRiwayatUjian());
 }
 
 function hapusUjian(token) {
-  if(confirm('Hapus Ujian?')) fetch('/api/ujian?action=hapusUjian', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token }) }).then(()=>loadRiwayatUjian());
-}
-
-function loadAktif() {
-  fetch('/api/ujian?action=getSiswaAktif').then(r=>r.json()).then(res => {
-    let html = "";
-    res.forEach((s, i) => {
-      html += `<tr><td class="text-center">${i+1}</td><td>${s.sekolah}</td><td><b>${s.nama}</b><br><small>${s.studentId}</small></td><td>${s.kelas}</td><td>${s.mapel}</td><td><code>${s.token}</code></td><td><span class="badge badge-warning">${s.status}</span></td><td><button class="btn btn-danger btn-xs" onclick="resetSiswa('${s.studentId}')">RESET</button></td></tr>`;
-    });
-    $('#listAktif').html(html);
-  });
-}
-
-function resetSiswa(id) {
-  fetch('/api/ujian?action=resetSiswa', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ studentId: id }) }).then(()=>loadAktif());
-}
-
-function loadSoal() {
-  let kls = $('#fKlsSoal').val() || '', mpl = $('#fMplSoal').val() || '';
-  fetch(`/api/ujian?action=getSoalAdmin&kls=${kls}&mpl=${mpl}`).then(r=>r.json()).then(res => {
-    let html = "";
-    res.forEach(s => {
-      html += `<tr><td>${s.id}</td><td>${s.pertanyaan}</td><td>${s.jenis}</td><td>${s.skor}</td><td>${s.status}</td><td><button class="btn btn-danger btn-xs" onclick="hapusSoal('${s.id}')">Hapus</button></td></tr>`;
-    });
-    $('#listSoal').html(html);
-  });
-}
-
-function hapusSoal(id) {
-  if(confirm('Hapus Soal?')) fetch('/api/ujian?action=hapusSoal', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id }) }).then(()=>loadSoal());
-}
-
-function loadHasil() {
-  fetch('/api/ujian?action=getRekapHasil').then(r=>r.json()).then(res => {
-    ALL_HASIL = res;
-    let html = "";
-    res.forEach((h, i) => {
-      html += `<tr><td>${i+1}</td><td>${h.waktu}</td><td>${h.sekolah}</td><td><b>${h.nama}</b></td><td>${h.kelas}</td><td>${h.mapel}</td><td>${h.pg}</td><td>${h.uraian}</td><td><b>${h.total}</b></td><td><button class="btn btn-danger btn-xs" onclick="hapusHasilRow('${h.idDb}')"><i class="fa fa-trash"></i></button></td></tr>`;
-    });
-    $('#listHasil').html(html);
-  });
-}
-
-function hapusHasilRow(idDb) {
-  if(confirm('Hapus Hasil?')) fetch('/api/ujian?action=hapusHasil', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ idDb }) }).then(()=>loadHasil());
-}
-
-function printKartu() {
-  let dataCetak = ALL_SISWA;
-  let html = "";
-  dataCetak.forEach(s => {
-    html += `<div class="card-cetak"><div class="header-kartu"><img src="https://pusmendik.kemdikbud.go.id/tka/images/logo-kemdikbud-71x72.png"><div><b>KARTU LOGIN</b><br>SIMULASI AKM</div></div><table class="tabel-kartu"><tr><td>Sekolah</td><td>: ${s.sekolah}</td></tr><tr><td>Nama</td><td>: <b>${s.nama}</b></td></tr><tr><td>Kelas</td><td>: ${s.kelas}</td></tr><tr><td>Username</td><td>: <b>${s.username}</b></td></tr></table></div>`;
-  });
-  $('#print-area').html(html);
-  setTimeout(() => { window.print(); }, 500);
-}
-
-function exportHasil() {
-  if(ALL_HASIL.length === 0) return alert("Tidak ada data.");
-  let csv = "No,Waktu,Sekolah,Nama,ID Siswa,Kelas,Mapel,Nilai PG,Nilai Uraian,Total\n";
-  ALL_HASIL.forEach((h, index) => {
-    csv += `${index + 1},${h.waktu},${h.sekolah},${h.nama},${h.studentId},${h.kelas},${h.mapel},${h.pg},${h.uraian},${h.total}\n`;
-  });
-  let blob = new Blob([csv], { type: 'text/csv' });
-  let url = window.URL.createObjectURL(blob);
-  let a = document.createElement('a'); a.href = url; a.download = 'Rekap_Nilai_CBT.csv'; a.click();
+  if(confirm("Hapus ujian?")) {
+    fetch('/api/ujian?action=hapusUjian', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({token}) }).then(() => loadRiwayat());
+  }
 }
 </script>
 </body>

@@ -14,14 +14,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: 'ERROR', data: 'Username atau Password Salah!' });
       }
 
-      // Cek sesi aktif & timeout otomatis 30 menit
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      await supabase.from('active_sessions')
-        .update({ status: 'TIMEOUT' })
-        .eq('student_id', siswa.student_id)
-        .eq('status', 'ON_PROGRESS')
-        .lt('last_ping', thirtyMinutesAgo);
-
       const { data: activeSess } = await supabase.from('active_sessions')
         .select('*')
         .eq('student_id', siswa.student_id)
@@ -39,10 +31,26 @@ export default async function handler(req, res) {
     }
 
     if (action === 'login_admin') {
-      if (username === (process.env.ADMIN_USER || 'admin') && password === (process.env.ADMIN_PASS || 'admin123')) {
-        return res.status(200).json({ status: 'SUCCESS', token: 'ADMIN-AUTH-TOKEN' });
+      const { data: admin } = await supabase.from('admin_users').select('*').eq('username', username).single();
+      if (!admin || !bcrypt.compareSync(password, admin.password)) {
+        return res.status(200).json({ status: 'ERROR', data: 'Username atau Password Admin Salah!' });
       }
-      return res.status(200).json({ status: 'ERROR', data: 'Admin Unauthorized' });
+
+      return res.status(200).json({
+        status: 'SUCCESS',
+        data: {
+          username: admin.username,
+          namaAdmin: admin.nama_admin,
+          role: admin.role, // 'PUSAT' atau 'SEKOLAH'
+          sekolah: admin.sekolah,
+          permissions: {
+            canUploadSoal: admin.can_upload_soal,
+            canManageSiswa: admin.can_manage_siswa,
+            canResetSiswa: admin.can_reset_siswa,
+            canExportNilai: admin.can_export_nilai
+          }
+        }
+      });
     }
   } catch (err) {
     return res.status(500).json({ status: 'ERROR', data: 'Internal Server Error' });
