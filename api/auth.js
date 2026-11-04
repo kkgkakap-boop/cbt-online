@@ -8,12 +8,14 @@ export default async function handler(req, res) {
   const { action, username, password } = req.body;
 
   try {
+    // 1. Login Siswa
     if (action === 'login_siswa') {
       const { data: siswa } = await supabase.from('siswa').select('*').eq('username', username).single();
       if (!siswa || !bcrypt.compareSync(password, siswa.password)) {
         return res.status(200).json({ status: 'ERROR', data: 'Username atau Password Salah!' });
       }
 
+      // Cek sesi aktif siswa
       const { data: activeSess } = await supabase.from('active_sessions')
         .select('*')
         .eq('student_id', siswa.student_id)
@@ -30,6 +32,7 @@ export default async function handler(req, res) {
       });
     }
 
+    // 2. Login Admin (Pusat & Sekolah)
     if (action === 'login_admin') {
       const { data: admin } = await supabase.from('admin_users').select('*').eq('username', username).single();
       if (!admin || !bcrypt.compareSync(password, admin.password)) {
@@ -42,16 +45,12 @@ export default async function handler(req, res) {
           username: admin.username,
           namaAdmin: admin.nama_admin,
           role: admin.role, // 'PUSAT' atau 'SEKOLAH'
-          sekolah: admin.sekolah,
-          permissions: {
-            canUploadSoal: admin.can_upload_soal,
-            canManageSiswa: admin.can_manage_siswa,
-            canResetSiswa: admin.can_reset_siswa,
-            canExportNilai: admin.can_export_nilai
-          }
+          sekolah: admin.sekolah // Nama sekolah (jika role SEKOLAH)
         }
       });
     }
+
+    return res.status(400).json({ status: 'ERROR', data: 'Aksi tidak dikenal' });
   } catch (err) {
     return res.status(500).json({ status: 'ERROR', data: 'Internal Server Error' });
   }
